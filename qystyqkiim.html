@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <title>Қазақ баласы - Киіндіру ойыны</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --bg: #f0f9ff;
+            --white: #ffffff;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Жоғарғы панель және Музыка батырмасы */
+        .top-panel {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { background: #0369a1; transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
+        .game-container {
+            display: flex;
+            gap: 50px;
+            background: var(--white);
+            padding: 35px;
+            border-radius: 35px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.1);
+            align-items: flex-start;
+        }
+
+        /* ГАРДЕРОБ (Үлкейтілген иконкалар) */
+        .wardrobe {
+            display: grid;
+            grid-template-columns: repeat(2, 140px); /* Иконкалар ені үлкейді */
+            grid-auto-rows: 140px; /* Иконкалар биіктігі үлкейді */
+            gap: 20px;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 25px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .clothing-item {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: grab;
+            background: white;
+            border-radius: 18px;
+            border: 2px solid #edf2f7;
+            transition: 0.3s;
+            padding: 5px;
+        }
+
+        .clothing-item:hover { 
+            border-color: var(--primary); 
+            background: #e0f2fe;
+            transform: scale(1.05);
+        }
+
+        /* ОЙЫН АЛАҢЫ */
+        .stage {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            background: #fff;
+            border-radius: 25px;
+            border: 5px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+        }
+
+        /* Қабаттар (1-әдіс бойынша) */
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            display: none;
+        }
+
+        .base-character {
+            display: block;
+            z-index: 1;
+        }
+
+        /* Қабаттар реті */
+        #img-borik   { z-index: 10; }
+        #img-sharf   { z-index: 9; }
+        #img-kolgap  { z-index: 8; }
+        #img-kurthe  { z-index: 7; }
+        #img-shalbar { z-index: 6; }
+        #img-etik    { z-index: 5; }
+
+        /* ЖЕҢІС ЭКРАНЫ */
+        #victory {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.98);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        #victory h1 { color: #0369a1; font-size: 36px; margin-bottom: 20px; }
+        #victory img { width: 550px; border-radius: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="top-panel">
+        <button id="musicBtn" class="btn">🎵 Музыка: Өшірулі</button>
+        <h2 style="margin: 0 auto; color: #0369a1; font-size: 28px; text-align: center;">
+    Балақайдың қыстық киімдерін дұрыс орналастыр!
+</h2>
+        <button class="btn" onclick="location.reload()">🔄 Басынан бастау</button>
+    </div>
+
+    <div class="game-container">
+        <div class="wardrobe">
+            <img src="borik.png" id="borik" class="clothing-item" draggable="true" title="Бөрік">
+            <img src="kurthe.png" id="kurthe" class="clothing-item" draggable="true" title="Куртка">
+            <img src="sharf.png" id="sharf" class="clothing-item" draggable="true" title="Шарф">
+            <img src="kolgap.png" id="kolgap" class="clothing-item" draggable="true" title="Қолғап">
+            <img src="shalbar.png" id="shalbar" class="clothing-item" draggable="true" title="Шалбар">
+            <img src="etik.png" id="etik" class="clothing-item" draggable="true" title="Етік">
+        </div>
+
+        <div class="stage" id="drop-zone">
+            <img src="bala.png" class="layer base-character">
+            
+            <img src="borik.png" id="img-borik" class="layer">
+            <img src="kurthe.png" id="img-kurthe" class="layer">
+            <img src="sharf.png" id="img-sharf" class="layer">
+            <img src="kolgap.png" id="img-kolgap" class="layer">
+            <img src="shalbar.png" id="img-shalbar" class="layer">
+            <img src="etik.png" id="img-etik" class="layer">
+        </div>
+    </div>
+
+    <div id="victory">
+        <h1>Керемет! Балақай ойынға дайын!</h1>
+        <img src="bala2.png" alt="Дайын бала">
+        <button class="btn" style="margin-top: 30px;" onclick="location.reload()">🔄 Қайта ойнау</button>
+    </div>
+
+    <audio id="bgMusic" loop src="music.mp3"></audio>
+
+    <script>
+        // Музыканы басқару
+        const music = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let isPlaying = false;
+
+        musicBtn.onclick = () => {
+            if(!isPlaying) {
+                music.play().catch(e => console.log("Музыканы ойнату үшін алдымен бетті басу керек."));
+                musicBtn.innerText = "🎶 Музыка: Қосулы";
+            } else {
+                music.pause();
+                musicBtn.innerText = "🎵 Музыка: Өшірулі";
+            }
+            isPlaying = !isPlaying;
+        };
+
+        // Киіндіру логикасы
+        let dressedCount = 0;
+        const totalItems = 6;
+
+        document.querySelectorAll('.clothing-item').forEach(item => {
+            item.ondragstart = (e) => e.dataTransfer.setData('id', e.target.id);
+        });
+
+        const stage = document.getElementById('drop-zone');
+        stage.ondragover = (e) => e.preventDefault();
+
+        stage.ondrop = (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('id');
+            const target = document.getElementById('img-' + id);
+            const source = document.getElementById(id);
+
+            if (target && target.style.display !== 'block') {
+                target.style.display = 'block';
+                source.style.opacity = '0.3';
+                source.draggable = false;
+                dressedCount++;
+
+                if (dressedCount === totalItems) {
+                    setTimeout(() => { 
+                        document.getElementById('victory').style.display = 'flex'; 
+                    }, 500);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
