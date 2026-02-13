@@ -2,6 +2,7 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Қазақ баласы - Киіндіру ойыны</title>
     <style>
         :root {
@@ -18,6 +19,7 @@
             align-items: center;
             margin: 0;
             padding: 20px;
+            touch-action: none; /* Экранның секіруін тоқтатады */
         }
 
         /* Жоғарғы панель және Музыка батырмасы */
@@ -59,11 +61,11 @@
             align-items: flex-start;
         }
 
-        /* ГАРДЕРОБ (Үлкейтілген иконкалар) */
+        /* ГАРДЕРОБ */
         .wardrobe {
             display: grid;
-            grid-template-columns: repeat(2, 140px); /* Иконкалар ені үлкейді */
-            grid-auto-rows: 140px; /* Иконкалар биіктігі үлкейді */
+            grid-template-columns: repeat(2, 140px);
+            grid-auto-rows: 140px;
             gap: 20px;
             background: #f8fafc;
             padding: 25px;
@@ -81,6 +83,8 @@
             border: 2px solid #edf2f7;
             transition: 0.3s;
             padding: 5px;
+            touch-action: none;
+            position: relative;
         }
 
         .clothing-item:hover { 
@@ -101,7 +105,6 @@
             box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
         }
 
-        /* Қабаттар (1-әдіс бойынша) */
         .layer {
             position: absolute;
             top: 0;
@@ -132,7 +135,7 @@
             position: fixed;
             inset: 0;
             background: rgba(255,255,255,0.98);
-            z-index: 1000;
+            z-index: 2000;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -148,17 +151,17 @@
 <body>
 
     <div class="top-panel">
-    <div style="display: flex; gap: 10px;">
-        <button id="musicBtn" class="btn">🎵 Музыка: Өшірулі</button>
-        <button id="fullscreenBtn" class="btn">🖥️ Толық экран</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="musicBtn" class="btn">🎵 Музыка: Өшірулі</button>
+            <button id="fullscreenBtn" class="btn">🖥️ Толық экран</button>
+        </div>
+        
+        <h2 style="flex-grow: 1; margin: 0; color: #0369a1; font-size: 28px; text-align: center;">
+            Балақайдың қыстық киімдерін дұрыс орналастыр!
+        </h2>
+        
+        <button class="btn" onclick="location.reload()">🔄 Басынан бастау</button>
     </div>
-    
-    <h2 style="flex-grow: 1; margin: 0; color: #0369a1; font-size: 28px; text-align: center;">
-        Балақайдың қыстық киімдерін дұрыс орналастыр!
-    </h2>
-    
-    <button class="btn" onclick="location.reload()">🔄 Басынан бастау</button>
-</div>
 
     <div class="game-container">
         <div class="wardrobe">
@@ -191,14 +194,13 @@
     <audio id="bgMusic" loop src="music.mp3"></audio>
 
     <script>
-        // Музыканы басқару
         const music = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
         let isPlaying = false;
 
         musicBtn.onclick = () => {
             if(!isPlaying) {
-                music.play().catch(e => console.log("Музыканы ойнату үшін алдымен бетті басу керек."));
+                music.play().catch(e => console.log("Музыка қатесі"));
                 musicBtn.innerText = "🎶 Музыка: Қосулы";
             } else {
                 music.pause();
@@ -207,44 +209,79 @@
             isPlaying = !isPlaying;
         };
 
-const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        fullscreenBtn.onclick = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().then(() => {
+                    fullscreenBtn.innerText = "✖️ Экраннан шығу";
+                });
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.innerText = "🖥️ Толық экран";
+            }
+        };
 
-fullscreenBtn.onclick = () => {
-    if (!document.fullscreenElement) {
-        // Толық экранға кіру
-        document.documentElement.requestFullscreen().then(() => {
-            fullscreenBtn.innerText = "✖️ Экраннан шығу";
-        }).catch(err => {
-            alert(`Қате: ${err.message}`);
-        });
-    } else {
-        // Толық экраннан шығу
-        document.exitFullscreen();
-        fullscreenBtn.innerText = "🖥️ Толық экран";
-    }
-};
-
-// Экраннан ESC арқылы шыққанда батырма мәтінін түзету
-document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) {
-        fullscreenBtn.innerText = "🖥️ Толық экран";
-    }
-});
-
-        // Киіндіру логикасы
+        // ТЕГЕРШІК ПЕН СЕНСОРДЫ БІРІКТІРУ
         let dressedCount = 0;
         const totalItems = 6;
+        const stage = document.getElementById('drop-zone');
 
+        // Тінтуірмен сүйреу (Desktop)
         document.querySelectorAll('.clothing-item').forEach(item => {
             item.ondragstart = (e) => e.dataTransfer.setData('id', e.target.id);
+            
+            // СЕНСОРЛЫҚ БАСҚАРУ (Android APK үшін)
+            item.addEventListener('touchstart', handleTouchStart, { passive: false });
+            item.addEventListener('touchmove', handleTouchMove, { passive: false });
+            item.addEventListener('touchend', handleTouchEnd, { passive: false });
         });
 
-        const stage = document.getElementById('drop-zone');
         stage.ondragover = (e) => e.preventDefault();
-
         stage.ondrop = (e) => {
             e.preventDefault();
             const id = e.dataTransfer.getData('id');
+            applyClothing(id);
+        };
+
+        // Touch функциялары
+        let activeTouchItem = null;
+        let startX, startY;
+
+        function handleTouchStart(e) {
+            if (this.draggable === false) return;
+            activeTouchItem = this;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            this.style.zIndex = "100";
+        }
+
+        function handleTouchMove(e) {
+            if (!activeTouchItem) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+            activeTouchItem.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
+        }
+
+        function handleTouchEnd(e) {
+            if (!activeTouchItem) return;
+            const touch = e.changedTouches[0];
+            const dropZoneRect = stage.getBoundingClientRect();
+
+            // Суреттің аяқталу нүктесі drop-zone ішінде ме?
+            if (touch.clientX >= dropZoneRect.left && touch.clientX <= dropZoneRect.right &&
+                touch.clientY >= dropZoneRect.top && touch.clientY <= dropZoneRect.bottom) {
+                applyClothing(activeTouchItem.id);
+            }
+
+            activeTouchItem.style.transform = "";
+            activeTouchItem.style.zIndex = "";
+            activeTouchItem = null;
+        }
+
+        function applyClothing(id) {
             const target = document.getElementById('img-' + id);
             const source = document.getElementById(id);
 
@@ -252,6 +289,8 @@ document.addEventListener('fullscreenchange', () => {
                 target.style.display = 'block';
                 source.style.opacity = '0.3';
                 source.draggable = false;
+                // Сенсорды өшіру
+                source.style.pointerEvents = 'none';
                 dressedCount++;
 
                 if (dressedCount === totalItems) {
@@ -260,7 +299,7 @@ document.addEventListener('fullscreenchange', () => {
                     }, 500);
                 }
             }
-        };
+        }
     </script>
 </body>
 </html>
